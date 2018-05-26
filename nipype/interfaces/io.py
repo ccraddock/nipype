@@ -435,32 +435,35 @@ class DataSink(IOBase):
         # Init variables
         creds_path = self.inputs.creds_path
 
+        aws_access_key_id = None
+        aws_secret_access_key = None
+
         # Check if creds exist
-        if creds_path and os.path.exists(creds_path):
-            with open(creds_path, 'r') as creds_in:
-                # Grab csv rows
-                row1 = creds_in.readline()
-                row2 = creds_in.readline()
+        if creds_path and creds_path != 'anon':
+            if os.path.exists(creds_path):
+                with open(creds_path, 'r') as creds_in:
+                    # Grab csv rows
+                    row1 = creds_in.readline()
+                    row2 = creds_in.readline()
 
-            # Are they root or user keys
-            if 'User Name' in row1:
-                # And split out for keys
-                aws_access_key_id = row2.split(',')[1]
-                aws_secret_access_key = row2.split(',')[2]
-            elif 'AWSAccessKeyId' in row1:
-                # And split out for keys
-                aws_access_key_id = row1.split('=')[1]
-                aws_secret_access_key = row2.split('=')[1]
-            else:
-                err_msg = 'Credentials file not recognized, check file is correct'
-                raise Exception(err_msg)
+                # Are they root or user keys
+                if 'User Name' in row1:
+                    # And split out for keys
+                    aws_access_key_id = row2.split(',')[1]
+                    aws_secret_access_key = row2.split(',')[2]
+                elif 'AWSAccessKeyId' in row1:
+                    # And split out for keys
+                    aws_access_key_id = row1.split('=')[1]
+                    aws_secret_access_key = row2.split('=')[1]
+                else:
+                    err_msg = 'Credentials file not recognized, check file is correct'
+                    raise Exception(err_msg)
 
-            # Strip any carriage return/line feeds
-            aws_access_key_id = aws_access_key_id.replace('\r', '').replace('\n', '')
-            aws_secret_access_key = aws_secret_access_key.replace('\r', '').replace('\n', '')
-        else:
-            aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
-            aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
+                # Strip any carriage return/line feeds
+                aws_access_key_id = aws_access_key_id.replace('\r', '').replace('\n', '')
+                aws_secret_access_key = aws_secret_access_key.replace('\r', '').replace('\n', '')
+        elif creds_path == 'anon':
+            aws_access_key_id = 'anon'
 
         # Return keys
         return aws_access_key_id, aws_secret_access_key
@@ -511,7 +514,7 @@ class DataSink(IOBase):
             raise Exception(err_msg)
 
         # Try and get AWS credentials if a creds_path is specified
-        if aws_access_key_id and aws_secret_access_key:
+        if aws_access_key_id and aws_access_key_id != 'anon' and aws_secret_access_key:
             # Init connection
             iflogger.info('Connecting to S3 bucket: %s with credentials...'\
                           % bucket_name)
@@ -524,11 +527,14 @@ class DataSink(IOBase):
 
         # Otherwise, connect anonymously
         else:
-            iflogger.info('Connecting to AWS: %s anonymously...'\
+            iflogger.info('Connecting to AWS: %s using credentials retreived from the environment ...'\
                           % bucket_name)
             session = boto3.session.Session()
             s3_resource = session.resource('s3', use_ssl=True)
-            s3_resource.meta.client.meta.events.register('choose-signer.s3.*',
+            if aws_access_key_id == 'anon':
+                iflogger.info('Make connection to AWS: %s anonymous...'\
+                          % bucket_name)
+                s3_resource.meta.client.meta.events.register('choose-signer.s3.*',
                                                          botocore.handlers.disable_signing)
 
         # Explicitly declare a secure SSL connection for bucket object
