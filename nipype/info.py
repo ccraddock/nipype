@@ -97,7 +97,7 @@ pipeline systems.
 
 # versions
 NIBABEL_MIN_VERSION = '2.1.0'
-NETWORKX_MIN_VERSION = '1.9'
+NETWORKX_VERSION = '1.11' 
 NUMPY_MIN_VERSION = '1.8.2'
 SCIPY_MIN_VERSION = '0.14'
 TRAITS_MIN_VERSION = '4.6'
@@ -129,7 +129,7 @@ VERSION = __version__
 PROVIDES = ['nipype']
 REQUIRES = [
     'nibabel>=%s' % NIBABEL_MIN_VERSION,
-    'networkx>=%s' % NETWORKX_MIN_VERSION,
+    'networkx==%s' % NETWORKX_VERSION,
     'numpy>=%s' % NUMPY_MIN_VERSION,
     'python-dateutil>=%s' % DATEUTIL_MIN_VERSION,
     'scipy>=%s' % SCIPY_MIN_VERSION,
