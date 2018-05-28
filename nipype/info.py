@@ -10,7 +10,7 @@ import sys
 # full release.  '.dev' as a version_extra string means this is a development
 # version
 # Remove -dev for release
-__version__ = '0.13.1c'
+__version__ = '0.13.66'
 
 
 def get_nipype_gitversion():
